@@ -49,3 +49,51 @@
 ## 참고
 
 - 노트북 기반 실험 코드이므로, 실제 서비스 배포 시에는 공통 모듈을 `.py` 파일로 분리하고 환경 의존적인 경로/토큰을 환경 변수로 관리하는 것이 좋습니다.
+
+## 실행 방법
+
+> 아래 절차는 CUDA가 탑재된 Linux 환경을 기준으로 작성되었습니다. GPU가 없더라도 CPU 모드로 동작하지만 학습 시간이 크게 증가할 수 있습니다.
+
+### 1. 환경 준비
+
+1. Python 3.9 이상 버전을 권장합니다.
+2. 가상 환경을 생성하고 필요한 패키지를 설치합니다.
+
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install --upgrade pip
+   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+   pip install -r requirements.txt  # requirements.txt가 없는 경우 노트북 첫 셀을 참고해 수동 설치
+   ```
+
+### 2. 학습 실행 (`lstm_ae.ipynb`)
+
+1. JupyterLab 또는 VS Code의 노트북 인터페이스에서 `lstm_ae.ipynb`를 열고 상단부터 순서대로 셀을 실행합니다.
+2. 커맨드라인에서 일괄 실행하고 싶은 경우 `papermill`을 활용할 수 있습니다.
+
+   ```bash
+   papermill lstm_ae.ipynb lstm_ae_out.ipynb \
+     -p data_dir /path/to/dataset \
+     -p device cuda:0 \
+     -p batch_size 64 \
+     -p max_epoch 100
+   ```
+
+3. 학습이 완료되면 `LSTMAutoEncoder/` 디렉터리에 체크포인트가 저장됩니다.
+
+### 3. 추론/서비스 실행 (`model_predict.ipynb`)
+
+1. 학습 시 생성된 체크포인트를 `LSTMAutoEncoder/` 폴더에 배치합니다.
+2. 노트북을 열고 Flask 앱 초기화 셀까지 실행하면, `ngrok` 또는 로컬호스트를 통해 `/process-video/` 엔드포인트가 활성화됩니다.
+3. 터미널에서 다음 명령으로 테스트 영상을 업로드할 수 있습니다.
+
+   ```bash
+   curl -X POST http://127.0.0.1:5000/process-video/ \
+     -F "video_file=@/path/to/video.mp4"
+   ```
+
+4. 응답 JSON에 이상 구간(`anomaly_times`)과 저장된 결과 경로가 포함됩니다.
+
+> **TIP:** 지속적으로 서비스를 운영하려면 `model_predict.ipynb`를 `.py` 스크립트로 변환한 뒤 `gunicorn`과 같은 WSGI 서버에서 실행하는 것을 권장합니다.
+
