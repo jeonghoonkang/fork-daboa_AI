@@ -96,3 +96,4 @@
 4. 응답 JSON에 이상 구간(`anomaly_times`)과 저장된 결과 경로가 포함됩니다.
 
 > **TIP:** 지속적으로 서비스를 운영하려면 `model_predict.ipynb`를 `.py` 스크립트로 변환한 뒤 `gunicorn`과 같은 WSGI 서버에서 실행하는 것을 권장합니다.
+
